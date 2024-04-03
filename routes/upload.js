@@ -118,7 +118,37 @@ router.get('/download/:candidateId/:jobId', async (req, res) => {
     return res.status(500).json({ message: 'Internal Server Error' });
   }
 });
+// download cv only without job id 
+router.get('/download/:candidateId', async (req, res) => {
+  try {
+    const { candidateId} = req.params;
+    
+    const candidate = await Users.findById(candidateId);
+    console.log("check:",candidate)
 
+    if (!candidate) {
+      return res.status(404).json({ message: 'Candidate not found' });
+    }
+   
+    const filePath = candidate.cvpath;
+
+    if (!filePath || filePath.trim() === '') {
+      return res.status(404).json({ message: 'CV not found. Please upload.' });
+    }
+    const candidateName = candidate.name.replace(/\s+/g, '_'); // Replace whitespace with underscores
+    const fileName = `${candidateName}_CV.pdf`;
+    res.setHeader('Content-Disposition', contentDisposition(fileName));
+    res.setHeader('Content-Type', 'application/pdf');
+
+    // Create a readable stream from the file and pipe it to the response
+    const fileStream = fs.createReadStream(filePath);
+    fileStream.pipe(res);
+   
+  } catch (error) {
+    console.error('Error occurred in Download Route:', error.message);
+    return res.status(500).json({ message: 'Internal Server Error' });
+  }
+});
 
 
 

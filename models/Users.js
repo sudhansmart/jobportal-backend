@@ -38,9 +38,9 @@ const userSchema = new mongoose.Schema(
       profileSummary:{
         type : String
       },
-      keySkills:{
+      keySkills:[{
         type : String
-      },
+      }],
       Updatedcvname:{
         type:String
       } ,
@@ -51,14 +51,19 @@ const userSchema = new mongoose.Schema(
         type : String
       },
 
-    joinedOn :{
+       joinedOn :{
         type:Date,
         default:Date.now()
      },   
-      dateofbirth :{
+      dob :{
       type:Date,
      },
-   
+     industry :{
+      type:String,
+     },
+     preferredLocation :{
+      type:String,
+     },
     otp: String,
       token:{
         type:String,
@@ -72,13 +77,13 @@ const userSchema = new mongoose.Schema(
         type: String
         },
         read: {
-          type:String
+          type:Boolean
         },
         write: {
-          type:String
+          type:Boolean
         },
         speak: {
-          type:String
+          type:Boolean
         },
       }],
      
@@ -89,12 +94,41 @@ const userSchema = new mongoose.Schema(
         collegeName: {
           type:String
         },
+        startyear:{
+          type : String
+        },
         passedout: {
           type:String
         },
-        course: {
+        degree: {
           type:String
         },
+      }],
+      employment: [{
+        expYear :{
+        type: String
+        },
+        expMonth: {
+          type:String
+        },
+        currentCompanyName:{
+          type : String
+        },
+        designation: {
+          type:String
+        },
+        startDate: {
+          type:Date
+        },
+        endDate: {
+          type:Date
+        },
+        jobSummary:{
+          type:String
+        },
+        isCurrent:{
+          type:Boolean
+        }
       }],
 
       appliedJobs: [{
