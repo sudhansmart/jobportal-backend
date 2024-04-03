@@ -364,7 +364,7 @@ router.put('/employment/:userId/:employmentId', async (req, res) => {
   try {
     const { userId, employmentId } = req.params;
     const updatedEmploymentData = req.body; 
-   console.log("ids :",userId,"ide : ",employmentId)
+  
    
     const user = await Users.findOneAndUpdate(
       { _id: userId, 'employment._id': employmentId }, 
