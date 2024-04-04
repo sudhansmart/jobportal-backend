@@ -3,6 +3,11 @@ const mongoose = require('mongoose');
 
 const userSchema = new mongoose.Schema(
    {
+    serialId :{
+      type:Number,
+     
+      unique : true
+    },
     name :{
         type:String,
        
@@ -20,10 +25,17 @@ const userSchema = new mongoose.Schema(
       location :{
         type:String,
       },
+      clientName:{
+        type:String
+      },
+
       experience :{
         type:String,
       },
       currentctc:{
+        type:String,
+      },
+      expectedctc:{
         type:String,
       },
       noticeperiod : {
@@ -50,13 +62,18 @@ const userSchema = new mongoose.Schema(
       gender:{
         type : String
       },
-
+      currentCompany:{
+        type:String
+      },
        joinedOn :{
         type:Date,
         default:Date.now()
      },   
       dob :{
       type:Date,
+     },
+     remarks:{
+      type:String
      },
      industry :{
       type:String,

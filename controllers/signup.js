@@ -20,7 +20,9 @@ async function InsertnewUser(name, email) {
   try {
     const Payload = {name:name,email:email}
     const token = generateToken(Payload);
+    const latestCandidate = await Users.findOne({}, {}, { sort: { serialId: -1 } });
     const newUser = new Users({
+      serialId: latestCandidate ? latestCandidate.serialId + 1 : 1,
       name: name,
       email: email,
       token: token,  
