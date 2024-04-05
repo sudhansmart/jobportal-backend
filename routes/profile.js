@@ -135,7 +135,7 @@ router.delete('/delete/:Id', async (req, res) => {
   
   try {
     const user = await Users.findById(fileId)
-      console.log("del : ",user)
+     
      if(user.cvname !== " "){
           fs.unlinkSync(`uploads/${user.cvname}`);
       user.cvname =  " "

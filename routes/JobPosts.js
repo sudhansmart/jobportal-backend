@@ -25,6 +25,20 @@ router.get('/specificjob/:id', async (req, res) => {
     }
 });
 
+// Update a job
+router.put('postupdate/:id', async (req, res) => {
+    const jobId = req.params.id;
+    const updateData = req.body; // New job data sent in the request body
+  
+    try {
+      const updatedJob = await Job.findByIdAndUpdate(jobId, updateData, { new: true });
+      res.json(updatedJob);
+    } catch (error) {
+      console.error('Error updating job:', error);
+      res.status(500).json({ error: 'Could not update job' });
+    }
+  });
+
 router.post('/upload',async (req,res)=>{
     const data = req.body
     const latestCandidate = await PostedJobs.findOne({}, {}, { sort: { serialId: -1 } });
