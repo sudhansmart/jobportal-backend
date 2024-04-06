@@ -26,16 +26,30 @@ router.get('/specificjob/:id', async (req, res) => {
 });
 
 // Update a job
-router.put('postupdate/:id', async (req, res) => {
+router.put('/postupdate/:id', async (req, res) => {
+   
     const jobId = req.params.id;
     const updateData = req.body; // New job data sent in the request body
+    
   
     try {
-      const updatedJob = await Job.findByIdAndUpdate(jobId, updateData, { new: true });
+      const updatedJob = await PostedJobs.findByIdAndUpdate(jobId, updateData, { new: true });
       res.json(updatedJob);
     } catch (error) {
       console.error('Error updating job:', error);
       res.status(500).json({ error: 'Could not update job' });
+    }
+  });
+  // Delete a job
+router.delete('/postdelete/:id', async (req, res) => {
+    const jobId = req.params.id;
+  
+    try {
+      await PostedJobs.findByIdAndDelete(jobId);
+      res.json({ message: 'Job deleted successfully' });
+    } catch (error) {
+      console.error('Error deleting job:', error);
+      res.status(500).json({ error: 'Could not delete job' });
     }
   });
 
