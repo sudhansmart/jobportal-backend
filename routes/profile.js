@@ -365,13 +365,16 @@ router.put('/employment/:userId/:employmentId', async (req, res) => {
     const { userId, employmentId } = req.params;
     const updatedEmploymentData = req.body; 
   
-   
+    const finduser = await Users.findById(userId)
     const user = await Users.findOneAndUpdate(
       { _id: userId, 'employment._id': employmentId }, 
       { $set: { 'employment.$': updatedEmploymentData } },
       { new: true }
     );
-   
+   if (updatedEmploymentData.isCurrent == true){
+    finduser.currentCompany = updatedEmploymentData.currentCompanyName
+    await finduser.save()
+   }
     if (!user) {
       return res.status(404).json({ error: 'User not found or employment not found in the user' });
     }

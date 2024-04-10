@@ -12,6 +12,7 @@ router.get('/getdata', async (req, res) => {
     }
 });
 router.get('/specificjob/:id', async (req, res) => {
+  console.log("api hitted")
     try {
         const id = req.params.id;
         const job = await PostedJobs.findById(id); 
