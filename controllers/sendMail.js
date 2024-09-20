@@ -11,8 +11,9 @@ const transporter = nodemailer.createTransport({
 });
 
 function sendMail(toEmail,subject,content){
+     console.log("mail triggered :",toEmail)
     const mailOption ={
-        from : "sudhansince1997@gmail.com",
+        from : "skylarkhr2013@gmail.com",
         to : toEmail,
         subject:subject,
         html:content
@@ -20,11 +21,33 @@ function sendMail(toEmail,subject,content){
 
     transporter.sendMail(mailOption,(error,info)=>{
       if(error){
-        console.log("error occured :",error)
+        console.log("error occured in sendmail :",error)
       }else{
         console.log("Email Sent : ",info.response)
       }
     })
 
 }
-module.exports = {sendMail}
+
+function applyMail(toEmail,subject,content,attached,jobsmail){
+  console.log("mail triggered :",toEmail)
+ const mailOption ={
+     from : "skylarkhr2013@gmail.com",
+     to : toEmail,
+     bcc: jobsmail,
+     subject:subject,
+     html:content,
+     attachments:attached
+
+ };
+
+ transporter.sendMail(mailOption,(error,info)=>{
+   if(error){
+     console.log("error occured in sendmail :",error)
+   }else{
+     console.log("Email Sent : ",info.response)
+   }
+ })
+
+}
+module.exports = {sendMail,applyMail}

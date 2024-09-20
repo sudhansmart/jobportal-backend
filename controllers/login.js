@@ -5,13 +5,14 @@ const Users = require('../models/Users');
 async function insertOTP(email){
     try {
         const user = await Users.findOne({email:email}) 
-        const otp = Math.floor(100000 + Math.random() * 900000);
+        const otp = Math.floor(1000 + Math.random() * 9000);
+
         const generatedotp= otp.toString(); 
         user.otp = generatedotp;
 
-        const content = `<h2>Hello Job Seekers,</h2>
+        const content = `<h2>Hello  ${user.name.replace(/\b\w/g,c=>c.toUpperCase())},</h2>
         <h4>Welcome to Skylark HR solutions </h4>
-        <p>Thank You For Your Registration.Here is Your 6 Digit OTP - <h2 style="color: blue;">${generatedotp}</h2> </p>
+        <p>Thank You For Your Registration.Here is Your 4 Digit OTP - <h2 style="color: blue;">${generatedotp}</h2> </p>
         
         <p>Regards,</p>
         <p>Team Skylark HR solutions</p>`;

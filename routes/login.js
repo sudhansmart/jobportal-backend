@@ -4,9 +4,12 @@ const {CheckUser}= require('../controllers/signup');
 const {insertOTP,OtpVerification} =  require('../controllers/login');
 
 
+
 router.post('/verify',async (req,res)=>{
     const {email} = req.body;
     const userfound = await CheckUser(email);
+   
+   
     try {
         if(userfound){
             insertOTP(email)

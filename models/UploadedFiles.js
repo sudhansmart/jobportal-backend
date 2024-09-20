@@ -3,12 +3,6 @@ const mongoose = require('mongoose');
 
 const uploadedFileSchema = new mongoose.Schema(
    {
-    serialId :{
-    type:Number,
-    required:true,
-    unique : true
-  },
-    
    date: {
       type: Date,
       default: Date.now

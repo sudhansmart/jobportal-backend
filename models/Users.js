@@ -3,11 +3,7 @@ const mongoose = require('mongoose');
 
 const userSchema = new mongoose.Schema(
    {
-    serialId :{
-      type:Number,
-     
-      unique : true
-    },
+   
     name :{
         type:String,
        
@@ -21,6 +17,9 @@ const userSchema = new mongoose.Schema(
       },
       role :{
         type:String,
+      },
+      firstLogin :{
+        type:Boolean,
       },
       location :{
         type:String,
@@ -59,6 +58,12 @@ const userSchema = new mongoose.Schema(
       Updatedcvpath:{
         type:String
       } ,
+      photoName: {
+        type:String
+      },
+      photoPath: {
+        type:String
+      },
       gender:{
         type : String
       },

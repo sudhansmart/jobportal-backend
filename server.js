@@ -2,6 +2,7 @@ const express = require('express');
 const dotenv = require('dotenv');
 const mongoose = require('mongoose');
 const cors = require('cors');
+const path = require('path');
 dotenv.config();
 const app = express();
 app.use(cors());
@@ -18,9 +19,11 @@ app.use('/admin',require('./routes/admin'));
 app.use('/job',require('./routes/JobPosts'));
 app.use('/post',require('./routes/applyJob'));
 app.use('/profile',require('./routes/profile'));
+app.use('/contact',require('./routes/enquiry'));
 
 
-
+// Serve static files from the "photouploads" directory
+// app.use('/profile/photouploads/:id', express.static(path.join(__dirname, 'photouploads')));
 
 
 mongoose.connect(DB_URL,{})

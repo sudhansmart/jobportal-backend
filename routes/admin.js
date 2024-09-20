@@ -18,7 +18,7 @@ router.post('/login',async (req,res)=>{
           res.status(200).send(logincred);
         }
      } catch (error) {
-        
+        console.log("error occured in admin login :",error.message)
      }
 })
 

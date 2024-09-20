@@ -1,5 +1,6 @@
 const express = require('express');
 const multer = require('multer');
+const sharp = require('sharp');
 const router = express.Router();
 const Users = require('../models/Users');
 const fs = require('fs');
@@ -29,18 +30,17 @@ router.get('/specificprofile/:id',async (req, res) => {
   
   // Route to update a profile
   router.put('/update/:id', async (req, res) => {
-    console.log("upload triggerd : ",req.body)
+      console.log("updation")
+      console.log("input :",req.body)
     try {
       // Fetch the existing profile
       const existingProfile = await Users.findById(req.params.id);
       if (!existingProfile) {
         return res.status(404).json({ message: "Profile not found" });
       }
-  
-      // Merge the existing profile data with the new data from the request body
       const updatedProfileData = {
-        ...existingProfile.toObject(), // Convert Mongoose document to plain JavaScript object
-        ...req.body // Merge with new data from the request body
+        ...existingProfile.toObject(), 
+        ...req.body 
       };
   
       // Update the profile in the database
@@ -54,9 +54,105 @@ router.get('/specificprofile/:id',async (req, res) => {
       }
     } catch (error) {
       res.status(500).json({ message: error.message });
+      console.log("error occured update profile :",error.message)
     }
   });
   
+  // Upload Profile Photo
+
+  const photoStorage = multer.memoryStorage();
+
+  const photoUpload = multer({
+    storage: photoStorage,
+    limits: { fileSize: 1024 * 1024 * 5 }, // 5MB limit (adjust as needed)
+  }).single('photo');
+  
+  router.post('/uploadphoto/:id', (req, res) => {
+    photoUpload(req, res, async function (err) {
+      if (err instanceof multer.MulterError && err.code === 'LIMIT_FILE_SIZE') {
+        return res.status(202).json({ error: 'File too large. Please upload a file smaller than 5MB.' });
+      } else if (err) {
+        return res.status(204).json({ error: 'Failed to upload photo' });
+      }
+  
+      try {
+        const { id } = req.params;
+        const user = await Users.findById(id);
+        if (!user) {
+          return res.status(404).json({ error: 'User not found' });
+        }
+  
+        // Validate uploaded file type
+        if (!req.file.mimetype.startsWith('image/')) {
+          return res.status(203).json({ error: 'Invalid file type. Please upload an image.' });
+        }
+  
+        try {
+          const buffer = await sharp(req.file.buffer)
+            .resize({ width: 300 })
+            .toFormat('jpeg')
+            .jpeg({ quality: 90 })
+            .toBuffer();
+  
+          const photoFileName = `${user.name.replace(/\s+/g, '_')}_photo_${Date.now()}.jpeg`;
+          const photoFilePath = path.join('photouploads', photoFileName);
+  
+          // Ensure the directory exists
+          if (!fs.existsSync('photouploads')) {
+            fs.mkdirSync('photouploads', { recursive: true });
+          }
+  
+          // Save the processed image to the file system (consider cloud storage)
+          fs.writeFileSync(photoFilePath, buffer);
+  
+          // Delete the old photo if it exists
+          if (user.photoPath && fs.existsSync(user.photoPath)) {
+            fs.unlinkSync(user.photoPath);
+          }
+  
+          user.photoName = photoFileName;
+          user.photoPath = photoFilePath;
+          await user.save();
+  
+          res.status(201).json({ message: 'Photo uploaded successfully' });
+        } catch (error) {
+          console.error('Error processing image:', error);
+          return res.status(500).json({ error: 'Failed to process photo' });
+        }
+      } catch (error) {
+        console.error('Error uploading photo:', error);
+        res.status(500).json({ error: 'Internal server error' });
+      }
+    });
+  });
+  
+  
+  router.get('/profilepic/:id', async (req, res) => {
+    try {
+      const { id } = req.params;
+      const user = await Users.findById(id);
+      if (!user) {
+        return res.status(204).json({ error: 'User not found' });
+      }
+  
+      const photoPath = user.photoPath;
+  
+      if (!photoPath || !fs.existsSync(photoPath)) {
+        return res.status(203).json({ error: 'Profile picture not found' });
+      }
+  
+      const contentType = 'image/' + path.extname(photoPath).slice(1);
+      res.setHeader('Content-Type', contentType);
+  
+      const readStream = fs.createReadStream(photoPath);
+      readStream.pipe(res);
+    } catch (error) {
+      console.error('Error fetching profile picture:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  });
+
+ 
 // upload cv route 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -66,13 +162,24 @@ const storage = multer.diskStorage({
     }
     cb(null, uploadPath);
   },
-  filename: (req, file, cb) => {
-    const currentDate = new Date();
-    const formattedDate = currentDate.toISOString().split('T')[0];
-    const fileName = `${formattedDate}_${file.originalname}`;
-    cb(null, fileName);
+  filename: async (req, file, cb) => {
+    try {
+      const userId = req.params.id;
+      const user = await Users.findById(userId);
+      if (!user) {
+        return cb(new Error('User not found'), null);
+      }
+
+      const username = user.name; 
+      const currentDate = new Date();
+      const formattedDate = currentDate.toISOString().split('T')[0];
+      const fileName = `${username}_${formattedDate}_${file.originalname}`;
+
+      cb(null, fileName);
+    } catch (error) {
+      cb(error, null);
+    }
   },
-  
 });
 
 const upload = multer({ storage });
@@ -87,7 +194,13 @@ router.post('/uploadcv/:id', upload.single('file'), async (req, res) => {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    user.cvname = cvFileName
+    // Delete the old CV file if it exists
+    if (user.cvpath && fs.existsSync(user.cvpath)) {
+      fs.unlinkSync(user.cvpath);
+    }
+
+    // Update user with new CV details
+    user.cvname = cvFileName;
     user.cvpath = cvFilePath;
     await user.save();
 
@@ -132,23 +245,30 @@ router.get('/download/:candidateId', async (req, res) => {
 
 router.delete('/delete/:Id', async (req, res) => {
   const fileId = req.params.Id;
-  
+
   try {
-    const user = await Users.findById(fileId)
-     
-     if(user.cvname !== " "){
-          fs.unlinkSync(`uploads/${user.cvname}`);
-      user.cvname =  " "
-      user.cvpath = " "
+    const user = await Users.findById(fileId);
+    
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    if (user.cvname && user.cvname.trim() !== "") {
+      const filePath = `uploads/${user.cvname}`;
+      
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+      } else {
+        return res.status(206).send("File already deleted");
+      }
+      
+      user.cvname = "";
+      user.cvpath = "";
       await user.save();
       res.status(204).send();
-     }
-   else if( user.cvname == " "){
-    res.status(205).send("Cv not found ")
-   }
-   
- 
- 
+    } else {
+      res.status(205).send("CV not found");
+    }
   } catch (error) {
     console.error('Error deleting file:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -279,6 +399,7 @@ router.post('/language/:id',async (req, res) => {
     const user = await Users.findById(id)
     if(user){
          user.languages.push(newLanguage);
+         user.firstLogin = false;
          await user.save();
 
        
@@ -315,18 +436,23 @@ router.delete('/deletelanguage/:userId/:languageId', async (req, res) => {
   }
 });
 
-// handle education 
+// handle employment 
 router.post('/employment/:id',async (req, res) => {
   
   const    employment  = req.body;
   const { id } = req.params;
+  console.log("req :",employment)
+ 
   try {
     const user = await Users.findById(id)
+    
     if(user){
          user.employment.push(employment);
+         if (employment.isCurrent == true){
+          user.currentCompany = employment.currentCompanyName
+          await user.save()
+         }
          await user.save();
-
-       
          res.status(201).send("Employment Saved")
     }
     if(!user){
@@ -352,6 +478,7 @@ router.delete('/deleteemployment/:userId/:employmentId', async (req, res) => {
 
    
     await user.save();
+    
 
     res.json(user); 
   } catch (error) {
@@ -366,6 +493,7 @@ router.put('/employment/:userId/:employmentId', async (req, res) => {
     const updatedEmploymentData = req.body; 
   
     const finduser = await Users.findById(userId)
+    
     const user = await Users.findOneAndUpdate(
       { _id: userId, 'employment._id': employmentId }, 
       { $set: { 'employment.$': updatedEmploymentData } },

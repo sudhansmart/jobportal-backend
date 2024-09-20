@@ -39,24 +39,27 @@ router.post('/upload', upload.single('file'), async (req, res) => {
   try {
     const file = req.file;
     const data = req.body;
-    console.log("data :",data)
+   
     const Payload = {name:data.name,email:data.email}
     const token = generateToken(Payload);
-    const latestCandidate = await UploadedFile.findOne({}, {}, { sort: { serialId: -1 } });
     const checkUser =  await Users.findOne({email: data.email});
-    const content = `<h2>Hello Job Seeker,</h2>
+    const content = `<h2>Hello ${data.name.replace(/\b\w/g,c=>c.toUpperCase())},</h2>
                       <h4>Welcome to Skylark HR Solutions </h4>
-                      <p>You are successfully registered with Skylark Job Portal. Please Login with Your email and complete the Profile details. </p>   
+                      <p>We have gathered few information about you during our discussion. Please access the provided link to enhance your profile
+                       collaboratively.Registering on our job portal will support our growth and help you secure your dream job with top multinational companies.</p>   
+                      <a target="_blank" href="https://www.skylarkjobs.com/" style={cursor:"pointer" }>Visit Skylarkjobs Portal</a>
                      <p>Regards,</p>
-                     <p>Skylark Hr Solutions</p>`;
+                     <p>Team Skylark</p>`;
     
     if (!checkUser) {
       if (file) {
         const formData = new Users({
-          serialId: latestCandidate ? latestCandidate.serialId + 1 : 1,
+          
           token: token,  
           name: data.name,
           email: data.email,
+          keySkills : data.skills,
+          firstLogin:true,
           phonenumber: data.phonenumber,
           location: data.location,
           clientName: data.clientName,
@@ -79,16 +82,18 @@ router.post('/upload', upload.single('file'), async (req, res) => {
       if (!file) {
         const formData = new Users({
 
-          serialId: latestCandidate ? latestCandidate.serialId + 1 : 1,
+         
           token: token,  
           name: data.name,
           email: data.email,
+          keySkills : data.skills,
+          firstLogin:true,
           phonenumber: data.phonenumber,
           location: data.location,
           clientName: data.clientName,
           role: data.role,
           currentCompany: data.currentCompany,
-          experience: data.experience,
+          experience: data.overAllExp,
           currentctc: data.currentCtc,
           expectedctc: data.expectedCtc,
           noticeperiod: data.noticePeriod,
@@ -97,6 +102,7 @@ router.post('/upload', upload.single('file'), async (req, res) => {
           cvname: "",
         });
         await formData.save();
+        sendMail(data.email, "Registration Successfull with Skylark Job Portal", content);
         return res.status(200).json({ message: 'User successfully registered.' });
       }
     } else { 
@@ -105,10 +111,11 @@ router.post('/upload', upload.single('file'), async (req, res) => {
           name: data.name,
           phonenumber: data.phonenumber,
           location: data.location,
+          keySkills : data.skills,
           clientName: data.clientName,
           role: data.role,
           currentCompany: data.currentCompany,
-          experience: data.experience,
+          experience: data.overAllExp,
           currentctc: data.currentCtc,
           expectedctc: data.expectedCtc,
           noticeperiod: data.noticePeriod,
@@ -123,12 +130,13 @@ router.post('/upload', upload.single('file'), async (req, res) => {
       if (!file) {
         await Users.updateOne({ email: data.email }, { $set: {
           name: data.name,
+          keySkills : data.skills,
           phonenumber: data.phonenumber,
           location: data.location,
           clientName: data.clientName,
           role: data.role,
           currentCompany: data.currentCompany,
-          experience: data.experience,
+          experience: data.overAllExp,
           currentctc: data.currentCtc,
           expectedctc: data.expectedCtc,
           noticeperiod: data.noticePeriod,
@@ -159,17 +167,17 @@ router.get('/download/:candidateId/:jobId', async (req, res) => {
     const candidate = await Users.findById(candidateId);
 
     if (!candidate) {
-      return res.status(404).json({ message: 'Candidate not found' });
+      return res.status(202).json({ message: 'Candidate not found' });
     }
     const appliedJob = candidate.appliedJobs.find(job => job.jobid == jobId);
 
     if (!appliedJob) {
-      return res.status(404).json({ message: 'Candidate has not applied for this job' });
+      return res.status(204).json({ message: 'Candidate has not applied for this job' });
     }
     const filePath = appliedJob.cvpath;
 
     if (!filePath || filePath.trim() === '') {
-      return res.status(404).json({ message: 'CV not found. Please upload.' });
+      return res.status(201).json({ message: 'CV not found. Please upload.' });
     }
     const candidateName = candidate.name.replace(/\s+/g, '_'); // Replace whitespace with underscores
     const fileName = `${candidateName}_CV.pdf`;
@@ -194,13 +202,13 @@ router.get('/download/:candidateId', async (req, res) => {
     console.log("check:",candidate)
 
     if (!candidate) {
-      return res.status(404).json({ message: 'Candidate not found' });
+      return res.status(202).json({ message: 'Candidate not found' });
     }
    
     const filePath = candidate.cvpath;
 
     if (!filePath || filePath.trim() === '') {
-      return res.status(404).json({ message: 'CV not found. Please upload.' });
+      return res.status(201).json({ message: 'CV not found. Please upload.' });
     }
     const candidateName = candidate.name.replace(/\s+/g, '_'); // Replace whitespace with underscores
     const fileName = `${candidateName}_CV.pdf`;
